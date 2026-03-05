@@ -139,7 +139,7 @@ export const startConsumer = async () => {
 
             await Analytics.findByIdAndUpdate("global_metrics", update, {
               upsert: true,
-              new: true,
+              returnDocument: "after",
             });
           }
         } catch (err) {
