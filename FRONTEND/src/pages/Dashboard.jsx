@@ -105,6 +105,9 @@ export default function Dashboard() {
               <h3 className="text-xl font-bold text-white tracking-widest">
                 SEARCHING...
               </h3>
+              <span className="text-neutral-400 text-sm">
+                If no player joins within 10 seconds, a bot will join.
+              </span>
             </div>
           )}
 

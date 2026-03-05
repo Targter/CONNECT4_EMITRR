@@ -20,15 +20,21 @@ export const startConsumer = async () => {
           const payload = JSON.parse(message.value.toString());
           console.log("Received Event:", payload.event, "| Payload:", payload);
           const p2Name =
-            payload.players?.[1]?.username || payload.player2 || "";
+            payload.players?.[1]?.username ||
+            payload.players?.[1] ||
+            payload.player2 ||
+            "";
           console.log("Player 2 Name for Bot Detection:", p2Name);
+          const p2 = p2Name.toLowerCase();
+
           const isBot =
             payload.isBotGame === true ||
             payload.gameType === "bot" ||
             payload.mode === "pve" ||
-            p2Name.toLowerCase().includes("cpu") ||
-            p2Name.toLowerCase().includes("bot") ||
-            p2Name.toLowerCase().includes("ai");
+            p2 === "bot" ||
+            p2.includes("bot") ||
+            p2.includes("cpu") ||
+            p2.includes("ai");
           console.log("isBotGame:", isBot, "| Player2 Name:", p2Name);
           // Time keys
           const now = new Date();
@@ -95,7 +101,10 @@ export const startConsumer = async () => {
               } else {
                 // Logic: Did Player 1 win?
                 const p1Name =
-                  payload.players?.[0]?.username || payload.player1;
+                  payload.players?.[0]?.username ||
+                  payload.players?.[0] ||
+                  payload.player1 ||
+                  "";
                 const p1Won = payload.winner === p1Name;
 
                 if (p1Won) {
