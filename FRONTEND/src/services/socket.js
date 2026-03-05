@@ -1,2 +1,4 @@
 import { io } from "socket.io-client";
-export const socket = io("http://localhost:3000", { autoConnect: false });
+const backendUri = import.meta.env.VITE_BACKEND_URI || "http://localhost:3000";
+console.log("Fetching leaderboard...", import.meta.env.VITE_BACKEND_URI);
+export const socket = io(backendUri, { autoConnect: false });
