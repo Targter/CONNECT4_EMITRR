@@ -3,7 +3,11 @@ import cors from "cors";
 import Player from "./models/Player.js";
 
 const app = express();
-app.use(cors());
+app.use(
+  cors({
+    origin: "*",
+  }),
+);
 app.use(express.json());
 
 app.get("/api/leaderboard", async (req, res) => {
