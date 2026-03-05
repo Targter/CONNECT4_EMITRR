@@ -77,17 +77,29 @@ export const processMove = async (gameId, playerId, col) => {
 export const finishGame = async (game, winnerId) => {
   game.winner = winnerId;
   const duration = Date.now() - game.startTime;
+
+  // 👉 ADDED: Figure out if Player 1 (the creator) won
+  const playersArray = Object.keys(game.players);
+  const isPlayer1Win = winnerId === playersArray[0];
+
   notifyPlayers(game, "gameOver", getSanitized(game));
-  emitEvent("game_finished", { gameId: game.id, winner: winnerId, duration });
+
+  // 👉 ADDED: pass "isPlayer1Win" into the Kafka event
+  emitEvent("game_finished", {
+    gameId: game.id,
+    winner: winnerId,
+    duration,
+    isPlayer1Win,
+  });
 
   try {
     await Game.create({
-      players: Object.keys(game.players),
+      players: playersArray,
       moves: game.moves,
       winner: winnerId,
       duration,
     });
-    for (let pid of Object.keys(game.players).filter((id) => id !== "bot")) {
+    for (let pid of playersArray.filter((id) => id !== "bot")) {
       await Player.updateOne(
         { username: game.players[pid].username },
         { $inc: { totalGames: 1, totalWins: winnerId === pid ? 1 : 0 } },
