@@ -76,29 +76,38 @@ export const processMove = async (gameId, playerId, col) => {
 
 export const finishGame = async (game, winnerId) => {
   game.winner = winnerId;
-  const duration = Date.now() - game.startTime;
 
-  // 👉 ADDED: Figure out if Player 1 (the creator) won
+  // FIX 3: Ensure duration is accurately calculated (fallback to 1000ms if instant)
+  const durationMs = Date.now() - (game.startTime || Date.now());
+  const finalDuration = durationMs > 0 ? durationMs : 1000;
+
   const playersArray = Object.keys(game.players);
   const isPlayer1Win = winnerId === playersArray[0];
 
+  // Extract raw usernames for the consumer
+  const playerNames = Object.values(game.players).map((p) => p.username);
+
   notifyPlayers(game, "gameOver", getSanitized(game));
 
-  // 👉 ADDED: pass "isPlayer1Win" into the Kafka event
+  // Emit the fully formatted event to Kafka
   emitEvent("game_finished", {
     gameId: game.id,
     winner: winnerId,
-    duration,
+    duration: finalDuration,
     isPlayer1Win,
+    players: playerNames,
+    movesCount: game.moves.length,
   });
 
   try {
+    // Save to DB
     await Game.create({
-      players: playersArray,
+      players: playerNames,
       moves: game.moves,
       winner: winnerId,
-      duration,
+      duration: finalDuration,
     });
+
     for (let pid of playersArray.filter((id) => id !== "bot")) {
       await Player.updateOne(
         { username: game.players[pid].username },
@@ -109,6 +118,7 @@ export const finishGame = async (game, winnerId) => {
   } catch (e) {
     console.error("Save error:", e);
   }
+
   activeGames.delete(game.id);
 };
 

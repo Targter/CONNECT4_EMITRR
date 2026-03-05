@@ -11,6 +11,7 @@ export default function Leaderboard() {
       getPlayerAnalytics()
         .then((data) => {
           setLeaders(data);
+          console.log("leaderdata:", data);
           setLoading(false);
         })
         .catch((err) => {
@@ -102,10 +103,11 @@ export default function Leaderboard() {
       {/* Table Body */}
       <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1">
         {leaders.map((l, i) => {
-          const winRate =
-            l.totalGames > 0
-              ? Math.round((l.totalWins / l.totalGames) * 100)
-              : 0;
+          // const winRate =
+          //   l.totalGames > 0
+          //     ? Math.round((l.totalWins / l.totalGames) * 100)
+          //     : 0;
+          const winRate = l.winRate;
           const styles = getRankStyle(i);
 
           return (

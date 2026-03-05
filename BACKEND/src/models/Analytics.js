@@ -13,32 +13,39 @@
 
 import mongoose from "mongoose";
 
-const analyticsSchema = new mongoose.Schema({
-  _id: { type: String, default: "global_metrics" }, // Forces a single, continuous document
-  totalGames: { type: Number, default: 0 },
-  activeGames: { type: Number, default: 0 },
-  totalFinishedGames: { type: Number, default: 0 },
-  totalMoves: { type: Number, default: 0 },
+const analyticsSchema = new mongoose.Schema(
+  {
+    _id: { type: String, default: "global_metrics" }, // Forces a single, continuous document
+    totalGames: { type: Number, default: 0 },
+    activeGames: { type: Number, default: 0 },
+    totalFinishedGames: { type: Number, default: 0 },
+    totalMoves: { type: Number, default: 0 },
 
-  player1Wins: { type: Number, default: 0 },
-  player2Wins: { type: Number, default: 0 },
+    player1Wins: { type: Number, default: 0 },
+    player2Wins: { type: Number, default: 0 },
+    draws: { type: Number, default: 0 },
 
-  // Duration tracking
-  totalGameDuration: { type: Number, default: 0 },
-  longestGame: { type: Number, default: 0 },
-  shortestGame: { type: Number, default: 99999999 },
+    // Duration tracking
+    totalGameDuration: { type: Number, default: 0 },
+    longestGame: { type: Number, default: 0 },
+    shortestGame: { type: Number, default: 99999999 },
 
-  // Bot & Connection tracking
-  botGamesPlayed: { type: Number, default: 0 },
-  botWins: { type: Number, default: 0 },
-  botLosses: { type: Number, default: 0 },
-  disconnects: { type: Number, default: 0 },
-  reconnects: { type: Number, default: 0 },
+    // Bot & Connection tracking
+    botGamesPlayed: { type: Number, default: 0 },
+    botWins: { type: Number, default: 0 },
+    botLosses: { type: Number, default: 0 },
+    disconnects: { type: Number, default: 0 },
+    reconnects: { type: Number, default: 0 },
 
-  // Time-based Maps (Using Map for dynamic string keys)
-  gamesPerHour: { type: Map, of: Number, default: {} },
-  gamesPerDay: { type: Map, of: Number, default: {} },
-  movesPerHour: { type: Map, of: Number, default: {} },
-});
+    // Time-based Maps (Using Map for dynamic string keys)
+    gamesPerHour: { type: Map, of: Number, default: {} },
+    gamesPerDay: { type: Map, of: Number, default: {} },
+    movesPerHour: { type: Map, of: Number, default: {} },
+  },
+  {
+    timestamps: true,
+    minimize: false, // Prevents Mongoose from removing empty objects (like our Maps)
+  },
+);
 
 export default mongoose.model("Analytics", analyticsSchema);
