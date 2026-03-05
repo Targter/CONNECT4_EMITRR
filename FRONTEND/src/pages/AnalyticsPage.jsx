@@ -27,6 +27,7 @@ import {
   Network,
   ChevronUp,
   AlertCircle,
+  Radio,
 } from "lucide-react";
 
 // --- Custom Tooltip Component ---
@@ -38,7 +39,7 @@ const CustomTooltip = ({ active, payload, label }) => {
           {label}
         </p>
         <p className="text-sm font-bold text-cyan-400 font-mono">
-          {payload[0].value}{" "}
+          {payload[0].value.toLocaleString()}{" "}
           <span className="text-[10px] text-white">UNITS</span>
         </p>
       </div>
@@ -51,6 +52,7 @@ export default function AnalyticsPage() {
   const [global, setGlobal] = useState(null);
   const [players, setPlayers] = useState([]);
   const [trends, setTrends] = useState({ gamesPerHour: [], gamesPerDay: [] });
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
   useEffect(() => {
@@ -64,7 +66,6 @@ export default function AnalyticsPage() {
 
         setGlobal(gData);
         setPlayers(pData);
-        // Ensure trends exist, strictly matching backend structure
         setTrends({
           gamesPerHour: tData.gamesPerHour || [],
           gamesPerDay: tData.gamesPerDay || [],
@@ -73,22 +74,37 @@ export default function AnalyticsPage() {
       } catch (e) {
         console.error("Telemetry Error:", e);
         setError(true);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchAll();
-    const interval = setInterval(fetchAll, 5000); // Poll every 5s
+    const interval = setInterval(fetchAll, 5000); // Live poll every 5s
     return () => clearInterval(interval);
   }, []);
 
   // Helper to format duration (Backend sends ms)
   const formatTime = (ms) => {
-    if (!ms) return "0s";
+    if (!ms || isNaN(ms)) return "0s";
     return ms > 60000
       ? `${(ms / 60000).toFixed(1)}m`
       : `${(ms / 1000).toFixed(0)}s`;
   };
 
+  // --- Loading State ---
+  if (loading) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center space-y-4 bg-black">
+        <div className="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
+        <div className="text-cyan-500 font-mono text-xs uppercase tracking-widest animate-pulse">
+          Establishing Uplink...
+        </div>
+      </div>
+    );
+  }
+
+  // --- Error State ---
   if (error) {
     return (
       <div className="h-full flex flex-col items-center justify-center space-y-4 bg-black">
@@ -103,60 +119,57 @@ export default function AnalyticsPage() {
     );
   }
 
-  if (!global) {
-    return (
-      <div className="h-full flex flex-col items-center justify-center space-y-4 bg-black">
-        <div className="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
-        <div className="text-cyan-500 font-mono text-xs uppercase tracking-widest animate-pulse">
-          Syncing with Server...
-        </div>
-      </div>
-    );
-  }
-
   return (
-    // H-FULL + OVERFLOW-HIDDEN: Prevents the entire page from scrolling
+    // MAIN CONTAINER: Fits 100% height, prevents window scroll
     <div className="h-full w-full bg-black flex flex-col p-4 lg:p-6 gap-4 overflow-hidden relative">
-      {/* Header */}
-      <div className="flex items-center gap-3 border-b border-neutral-800 pb-4 shrink-0">
-        <div className="p-2 bg-neutral-900 border border-neutral-700 rounded-lg">
-          <Activity className="text-cyan-400 w-5 h-5" />
+      {/* --- Header --- */}
+      <div className="flex items-center justify-between border-b border-neutral-800 pb-4 shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-neutral-900 border border-neutral-700 rounded-lg">
+            <Activity className="text-cyan-400 w-5 h-5" />
+          </div>
+          <div>
+            <h1 className="text-lg font-bold text-white tracking-widest uppercase leading-none">
+              System Telemetry
+            </h1>
+            <p className="text-[10px] text-neutral-500 font-mono mt-1">
+              REAL-TIME DATA NODE
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-lg font-bold text-white tracking-widest uppercase leading-none">
-            System Telemetry
-          </h1>
-          <p className="text-[10px] text-neutral-500 font-mono mt-1">
-            REAL-TIME DATA PROCESSING NODE
-          </p>
+        <div className="hidden md:flex items-center gap-2 bg-neutral-900 border border-neutral-800 px-3 py-1.5 rounded-full">
+          <Radio className="w-4 h-4 text-green-500 animate-pulse" />
+          <span className="text-[10px] font-bold text-neutral-300 tracking-widest">
+            LIVE
+          </span>
         </div>
       </div>
 
-      {/* 1. KPI Cards (Top Row) */}
+      {/* --- KPI Cards (Top Row) --- */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 shrink-0">
         {[
           {
             label: "Total Matches",
-            val: global.totalGames || 0,
+            val: global?.totalGames || 0,
             icon: Target,
             color: "text-blue-400",
           },
           {
             label: "Active Arenas",
-            val: global.activeGames || 0,
+            val: global?.activeGames || 0,
             icon: Zap,
             color: "text-green-400",
             pulse: true,
           },
           {
             label: "Avg Duration",
-            val: formatTime(global.avgGameDuration),
+            val: formatTime(global?.avgGameDuration),
             icon: Clock,
             color: "text-yellow-400",
           },
           {
             label: "Total Moves",
-            val: (global.totalMoves || 0).toLocaleString(),
+            val: (global?.totalMoves || 0).toLocaleString(),
             icon: Network,
             color: "text-purple-400",
           },
@@ -180,19 +193,16 @@ export default function AnalyticsPage() {
         ))}
       </div>
 
-      {/* Main Content Grid */}
+      {/* --- Main Content Grid --- */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4 min-h-0">
-        {/* 2. Charts Column (Scrollable internally) */}
+        {/* Left Column: Charts (Scrollable) */}
         <div className="lg:col-span-2 flex flex-col gap-4 overflow-y-auto custom-scrollbar pr-2">
-          {/* Hourly Traffic */}
+          {/* Chart 1: Hourly Traffic */}
           <div className="bg-neutral-900/30 border border-neutral-800 p-5 rounded-xl min-h-[300px] flex flex-col relative overflow-hidden">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xs font-bold text-neutral-400 uppercase tracking-widest flex items-center gap-2">
                 <Activity className="w-3 h-3 text-cyan-500" /> Hourly Throughput
               </h3>
-              <div className="text-[9px] px-2 py-1 rounded bg-neutral-950 border border-neutral-800 text-neutral-500 font-mono">
-                LIVE
-              </div>
             </div>
             <div className="flex-1 w-full min-h-0">
               <ResponsiveContainer width="100%" height="100%">
@@ -225,7 +235,7 @@ export default function AnalyticsPage() {
             </div>
           </div>
 
-          {/* Daily Usage */}
+          {/* Chart 2: Daily Volume */}
           <div className="bg-neutral-900/30 border border-neutral-800 p-5 rounded-xl min-h-[300px] flex flex-col">
             <h3 className="text-xs font-bold text-neutral-400 uppercase tracking-widest mb-4 flex items-center gap-2">
               <ChevronUp className="w-3 h-3 text-purple-500" /> Daily Volume
@@ -272,50 +282,49 @@ export default function AnalyticsPage() {
           </div>
         </div>
 
-        {/* 3. Right Sidebar (Insights & Leaderboard) */}
+        {/* Right Column: Insights & Leaderboard (Fixed Height / Flex) */}
         <div className="flex flex-col gap-4 min-h-0">
-          {/* System Health / Backend Stats */}
+          {/* System Health */}
           <div className="bg-neutral-900/50 border border-neutral-800 p-5 rounded-xl shrink-0">
             <h3 className="text-xs font-bold text-neutral-400 uppercase tracking-widest mb-4 flex items-center gap-2">
               <Cpu className="w-4 h-4 text-neutral-500" /> Infrastructure
             </h3>
             <div className="space-y-4">
-              {/* Bot Win Rate */}
+              {/* Bot Efficiency */}
               <div>
                 <div className="flex justify-between items-center text-xs mb-1">
-                  <span className="text-neutral-500">
-                    Bot Efficiency (Win Rate)
-                  </span>
+                  <span className="text-neutral-500">Bot Win Rate</span>
                   <span
-                    className={`font-mono font-bold ${global.botWinRate > 50 ? "text-red-400" : "text-green-400"}`}
+                    className={`font-mono font-bold ${global?.botWinRate > 50 ? "text-red-400" : "text-green-400"}`}
                   >
-                    {Number(global.botWinRate || 0).toFixed(1)}%
+                    {Number(global?.botWinRate || 0).toFixed(1)}%
                   </span>
                 </div>
                 <div className="w-full bg-neutral-800 h-1 rounded-full overflow-hidden">
                   <div
-                    className={`h-full ${global.botWinRate > 50 ? "bg-red-500" : "bg-green-500"}`}
-                    style={{ width: `${global.botWinRate || 0}%` }}
+                    className={`h-full ${global?.botWinRate > 50 ? "bg-red-500" : "bg-green-500"}`}
+                    style={{ width: `${global?.botWinRate || 0}%` }}
                   ></div>
                 </div>
               </div>
 
-              {/* Connection Stability */}
+              {/* Drops */}
               <div className="flex justify-between items-center text-xs pt-2 border-t border-neutral-800">
                 <span className="text-neutral-500 flex items-center gap-1">
-                  <ServerCrash className="w-3 h-3" /> Socket Drops
+                  <ServerCrash className="w-3 h-3" /> Drops
                 </span>
                 <span className="font-mono font-bold text-yellow-500">
-                  {Number(global.disconnectRate || 0).toFixed(2)}%
+                  {Number(global?.disconnectRate || 0).toFixed(1)}%
                 </span>
               </div>
 
+              {/* Recoveries */}
               <div className="flex justify-between items-center text-xs">
                 <span className="text-neutral-500 flex items-center gap-1">
-                  <ShieldAlert className="w-3 h-3" /> Auto-Reconnects
+                  <ShieldAlert className="w-3 h-3" /> Recoveries
                 </span>
                 <span className="font-mono font-bold text-cyan-500">
-                  {Number(global.reconnectRate || 0).toFixed(1)}%
+                  {Number(global?.reconnectRate || 0).toFixed(1)}%
                 </span>
               </div>
             </div>
@@ -332,7 +341,7 @@ export default function AnalyticsPage() {
             <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1">
               {players.length === 0 && (
                 <div className="text-[10px] text-neutral-600 font-mono text-center mt-4">
-                  NO OPERATOR DATA
+                  NO DATA FOUND
                 </div>
               )}
               {players.map((p, i) => (

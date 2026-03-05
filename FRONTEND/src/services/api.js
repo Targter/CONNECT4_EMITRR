@@ -15,8 +15,8 @@ const API_URL = import.meta.env.VITE_BACKEND_URI || "http://localhost:3000";
 // };
 
 export const getGlobalAnalytics = async () =>
-  (await axios.get(`${API_URL}/analytics/global`)).data;
+  (await axios.get(`${API_URL}/api/analytics/global`)).data;
 export const getPlayerAnalytics = async () =>
-  (await axios.get(`${API_URL}/analytics/players`)).data;
+  (await axios.get(`${API_URL}/api/analytics/players`)).data;
 export const getTrends = async () =>
-  (await axios.get(`${API_URL}/analytics/trends`)).data;
+  (await axios.get(`${API_URL}/api/analytics/trends`)).data;
